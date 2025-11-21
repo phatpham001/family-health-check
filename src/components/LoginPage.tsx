@@ -91,10 +91,10 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <Heart className="size-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">
+          <CardTitle className="text-2xl text-gray-900">
             {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-600">
             {isLogin
               ? 'Theo dõi sức khỏe gia đình mỗi ngày'
               : 'Bắt đầu quản lý sức khỏe gia đình'}
@@ -104,7 +104,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="name">Tên của bạn</Label>
+                <Label htmlFor="name" className="text-gray-700">Tên của bạn</Label>
                 <Input
                   id="name"
                   type="text"
@@ -117,7 +117,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-700">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -129,7 +129,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
+              <Label htmlFor="password" className="text-gray-700">Mật khẩu</Label>
               <Input
                 id="password"
                 type="password"
@@ -152,7 +152,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-sm text-gray-700">
               {isLogin ? (
                 <p>
                   Chưa có tài khoản?{' '}
@@ -162,7 +162,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       setIsLogin(false);
                       setError('');
                     }}
-                    className="text-red hover:underline"
+                    className="text-blue-600 hover:underline font-medium"
                   >
                     Đăng ký ngay
                   </button>
@@ -176,7 +176,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       setIsLogin(true);
                       setError('');
                     }}
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-600 hover:underline font-medium"
                   >
                     Đăng nhập
                   </button>

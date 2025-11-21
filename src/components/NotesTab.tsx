@@ -8,14 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Plus, MessageSquare, Loader2, Lightbulb, AlertCircle, Clipboard } from 'lucide-react';
 import { api } from '../utils/api';
 import { Badge } from './ui/badge';
-
-interface Note {
-  id: string;
-  content: string;
-  type: string;
-  createdBy: string;
-  createdAt: string;
-}
+import type { Note } from '../types';
 
 interface NotesTabProps {
   token: string;
@@ -107,8 +100,8 @@ export function NotesTab({ token }: NotesTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Ghi chú & Ý kiến</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900">Ghi chú & Ý kiến</CardTitle>
+              <CardDescription className="text-gray-600">
                 Ghi lại các ý kiến, chú ý, nhắc nhở cho cả gia đình
               </CardDescription>
             </div>
@@ -121,14 +114,14 @@ export function NotesTab({ token }: NotesTabProps) {
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Tạo ghi chú mới</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-gray-900">Tạo ghi chú mới</DialogTitle>
+                  <DialogDescription className="text-gray-600">
                     Thêm ý kiến, chú ý hoặc nhắc nhở cho gia đình
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Loại ghi chú</Label>
+                    <Label className="text-gray-700">Loại ghi chú</Label>
                     <Select value={type} onValueChange={setType}>
                       <SelectTrigger>
                         <SelectValue />
@@ -143,7 +136,7 @@ export function NotesTab({ token }: NotesTabProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="content">Nội dung *</Label>
+                    <Label htmlFor="content" className="text-gray-700">Nội dung *</Label>
                     <Textarea
                       id="content"
                       placeholder="Viết ghi chú của bạn..."
@@ -208,7 +201,7 @@ export function NotesTab({ token }: NotesTabProps) {
                           {note.createdBy} • {formatDate(note.createdAt)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.content}</p>
                     </div>
                   </div>
                 </CardContent>

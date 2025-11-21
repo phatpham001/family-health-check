@@ -1,4 +1,5 @@
 import { projectId, publicAnonKey } from './supabase/info';
+import type { User, Family, Member, HealthCheck, Note } from '../types';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-541782ba`;
 
@@ -39,28 +40,28 @@ async function apiRequest<T>(
 }
 
 export const api = {
-  signup: (email: string, password: string, name: string) =>
+  signup: (email: string, password: string, name: string): Promise<ApiResponse<{ user: User }>> =>
     apiRequest('/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     }),
 
-  getMe: (token: string) =>
+  getMe: (token: string): Promise<ApiResponse<{ user: User }>> =>
     apiRequest('/me', {}, token),
 
-  getFamily: (token: string) =>
+  getFamily: (token: string): Promise<ApiResponse<{ family: Family }>> =>
     apiRequest('/family', {}, token),
 
-  getMembers: (token: string) =>
+  getMembers: (token: string): Promise<ApiResponse<{ members: Member[] }>> =>
     apiRequest('/members', {}, token),
 
-  addMember: (token: string, name: string, relationship: string) =>
+  addMember: (token: string, name: string, relationship: string): Promise<ApiResponse<{ member: Member }>> =>
     apiRequest('/members', {
       method: 'POST',
       body: JSON.stringify({ name, relationship }),
     }, token),
 
-  deleteMember: (token: string, memberId: string) =>
+  deleteMember: (token: string, memberId: string): Promise<ApiResponse<{ success: boolean }>> =>
     apiRequest(`/members/${memberId}`, {
       method: 'DELETE',
     }, token),
@@ -72,21 +73,21 @@ export const api = {
     note?: string,
     temperature?: string,
     bloodPressure?: string
-  ) =>
+  ): Promise<ApiResponse<{ healthCheck: HealthCheck }>> =>
     apiRequest('/health-checks', {
       method: 'POST',
       body: JSON.stringify({ memberId, status, note, temperature, bloodPressure }),
     }, token),
 
-  getHealthChecks: (token: string, memberId: string) =>
+  getHealthChecks: (token: string, memberId: string): Promise<ApiResponse<{ healthChecks: HealthCheck[] }>> =>
     apiRequest(`/health-checks/${memberId}`, {}, token),
 
-  createNote: (token: string, content: string, type: string) =>
+  createNote: (token: string, content: string, type: string): Promise<ApiResponse<{ note: Note }>> =>
     apiRequest('/notes', {
       method: 'POST',
       body: JSON.stringify({ content, type }),
     }, token),
 
-  getNotes: (token: string) =>
+  getNotes: (token: string): Promise<ApiResponse<{ notes: Note[] }>> =>
     apiRequest('/notes', {}, token),
 };

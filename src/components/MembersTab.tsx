@@ -7,30 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Trash2, User, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Circle, AlertCircle, Lightbulb, MessageSquare, Clipboard } from 'lucide-react';
 import { api } from '../utils/api';
 import { Badge } from './ui/badge';
-
-interface Member {
-  id: string;
-  name: string;
-  relationship: string;
-  createdAt: string;
-}
-
-interface HealthCheck {
-  id: string;
-  memberId: string;
-  status: string;
-  note: string;
-  date: string;
-  timestamp: string;
-}
-
-interface Note {
-  id: string;
-  content: string;
-  type: string;
-  createdBy: string;
-  createdAt: string;
-}
+import type { Member, HealthCheck, Note } from '../types';
 
 interface MembersTabProps {
   token: string;
@@ -195,8 +172,8 @@ export function MembersTab({ token }: MembersTabProps) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>{member?.name}</CardTitle>
-                <CardDescription>{member?.relationship}</CardDescription>
+                <CardTitle className="text-gray-900">{member?.name}</CardTitle>
+                <CardDescription className="text-gray-600">{member?.relationship}</CardDescription>
               </div>
               <Button variant="outline" onClick={() => setSelectedMember(null)}>
                 Quay lại
@@ -211,7 +188,7 @@ export function MembersTab({ token }: MembersTabProps) {
               <Button variant="outline" size="sm" onClick={previousMonth}>
                 <ChevronLeft className="size-4" />
               </Button>
-              <CardTitle>
+              <CardTitle className="text-gray-900">
                 {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
               </CardTitle>
               <Button variant="outline" size="sm" onClick={nextMonth}>
@@ -252,7 +229,7 @@ export function MembersTab({ token }: MembersTabProps) {
                       ${healthCheck ? 'bg-green-50 border-green-200' : ''}
                     `}
                   >
-                    <div className="text-sm">{day}</div>
+                    <div className="text-sm text-gray-700">{day}</div>
                     {healthCheck && (
                       <CheckCircle2 className="size-5 text-green-500 mt-1" />
                     )}
@@ -269,7 +246,7 @@ export function MembersTab({ token }: MembersTabProps) {
         {/* Recent health checks */}
         <Card>
           <CardHeader>
-            <CardTitle>Lịch sử check gần đây</CardTitle>
+            <CardTitle className="text-gray-900">Lịch sử check gần đây</CardTitle>
           </CardHeader>
           <CardContent>
             {healthChecks[selectedMember]?.length > 0 ? (
@@ -279,8 +256,8 @@ export function MembersTab({ token }: MembersTabProps) {
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="size-5 text-green-500" />
                       <div>
-                        <div className="text-sm">{new Date(check.timestamp).toLocaleDateString('vi-VN')}</div>
-                        {check.note && <div className="text-xs text-gray-500">{check.note}</div>}
+                        <div className="text-sm text-gray-900">{new Date(check.timestamp).toLocaleDateString('vi-VN')}</div>
+                        {check.note && <div className="text-xs text-gray-600">{check.note}</div>}
                       </div>
                     </div>
                   </div>
@@ -299,10 +276,10 @@ export function MembersTab({ token }: MembersTabProps) {
   return (
     <div className="space-y-4">
       {/* Notes section */}
-      {notes.length > 0 && (
+      {/* {notes.length > 0 && (
         <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader>
-            <CardTitle className="text-lg">📌 Ghi chú & Chú ý mới nhất</CardTitle>
+            <CardTitle className="text-lg text-gray-900">📌 Ghi chú & Chú ý mới nhất</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {notes.map((note) => {
@@ -318,21 +295,21 @@ export function MembersTab({ token }: MembersTabProps) {
                     <div className="text-xs text-gray-500 mb-1">
                       {note.createdBy} • {formatDate(note.createdAt)}
                     </div>
-                    <p className="text-sm">{note.content}</p>
+                    <p className="text-sm text-gray-700">{note.content}</p>
                   </div>
                 </div>
               );
             })}
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Thành viên gia đình</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900">Thành viên gia đình</CardTitle>
+              <CardDescription className="text-gray-600">
                 Click vào thành viên để xem lịch check sức khỏe
               </CardDescription>
             </div>
@@ -345,14 +322,14 @@ export function MembersTab({ token }: MembersTabProps) {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Thêm thành viên mới</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-gray-900">Thêm thành viên mới</DialogTitle>
+                  <DialogDescription className="text-gray-600">
                     Nhập thông tin thành viên trong gia đình
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddMember} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="member-name">Tên thành viên *</Label>
+                    <Label htmlFor="member-name" className="text-gray-700">Tên thành viên *</Label>
                     <Input
                       id="member-name"
                       placeholder="Nguyễn Văn B"
@@ -362,7 +339,7 @@ export function MembersTab({ token }: MembersTabProps) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="relationship">Mối quan hệ</Label>
+                    <Label htmlFor="relationship" className="text-gray-700">Mối quan hệ</Label>
                     <Input
                       id="relationship"
                       placeholder="Ví dụ: Con, Bố, Mẹ, Vợ, Chồng..."
@@ -422,9 +399,9 @@ export function MembersTab({ token }: MembersTabProps) {
                         <User className="size-6 text-blue-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{member.name}</CardTitle>
+                        <CardTitle className="text-lg text-gray-900">{member.name}</CardTitle>
                         {member.relationship && (
-                          <CardDescription>{member.relationship}</CardDescription>
+                          <CardDescription className="text-gray-600">{member.relationship}</CardDescription>
                         )}
                       </div>
                     </div>
@@ -456,8 +433,8 @@ export function MembersTab({ token }: MembersTabProps) {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      Tổng số lần check: {checkCount}
+                    <div className="text-sm text-gray-600">
+                      Tổng số lần check: <span className="font-medium text-gray-900">{checkCount}</span>
                     </div>
                   </div>
                 </CardContent>

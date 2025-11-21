@@ -8,12 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { CheckCircle2, Circle, Loader2, Activity } from 'lucide-react';
 import { api } from '../utils/api';
 import { Checkbox } from './ui/checkbox';
-
-interface Member {
-  id: string;
-  name: string;
-  relationship: string;
-}
+import type { Member } from '../types';
 
 interface HealthCheckTabProps {
   token: string;
@@ -159,8 +154,8 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Check sức khỏe hàng ngày</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-gray-900">Check sức khỏe hàng ngày</CardTitle>
+          <CardDescription className="text-gray-600">
             Đánh dấu các mục đã hoàn thành trong ngày
           </CardDescription>
         </CardHeader>
@@ -185,13 +180,13 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg">Check cho: {currentMember?.name}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg text-gray-900">Check cho: {currentMember?.name}</CardTitle>
+              <CardDescription className="text-gray-600">
                 Đã hoàn thành {checkedCount}/{totalItems} mục
               </CardDescription>
             </div>
             <div className="text-right">
-              <div className="text-2xl">
+              <div className="text-2xl font-semibold text-gray-900">
                 {Math.round((checkedCount / totalItems) * 100)}%
               </div>
             </div>
@@ -200,7 +195,7 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
         <CardContent className="space-y-6">
           {/* Cảm giác chung */}
           <div className="space-y-2">
-            <Label>Cảm giác hôm nay *</Label>
+            <Label className="text-gray-700">Cảm giác hôm nay *</Label>
             <Select value={feeling} onValueChange={setFeeling}>
               <SelectTrigger>
                 <SelectValue />
@@ -217,7 +212,7 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
 
           {/* Danh sách check items */}
           <div className="space-y-3">
-            <Label>Các mục cần check</Label>
+            <Label className="text-gray-700">Các mục cần check</Label>
             <div className="space-y-3">
               {healthCheckItems.map((item) => (
                 <div key={item.id} className="space-y-2">
@@ -229,7 +224,7 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
                     />
                     <Label
                       htmlFor={item.id}
-                      className="flex-1 cursor-pointer"
+                      className="flex-1 cursor-pointer text-gray-700"
                     >
                       {item.label}
                     </Label>
@@ -255,7 +250,7 @@ export function HealthCheckTab({ token }: HealthCheckTabProps) {
 
           {/* Ghi chú */}
           <div className="space-y-2">
-            <Label htmlFor="note">Ghi chú thêm</Label>
+            <Label htmlFor="note" className="text-gray-700">Ghi chú thêm</Label>
             <Textarea
               id="note"
               placeholder="Triệu chứng, cảm giác bất thường, hoặc ghi chú khác..."
