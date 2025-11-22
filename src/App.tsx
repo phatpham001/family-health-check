@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
-import { supabase } from './utils/supabase-client';
 import './app.css'
 import './index.css'
 
@@ -15,9 +14,9 @@ export default function App() {
 
   const checkSession = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        setToken(session.access_token);
+      const savedToken = localStorage.getItem('auth_token');
+      if (savedToken) {
+        setToken(savedToken);
       }
     } catch (error) {
       console.error('Lỗi khi kiểm tra session:', error);
@@ -27,10 +26,12 @@ export default function App() {
   };
 
   const handleLoginSuccess = (accessToken: string) => {
+    localStorage.setItem('auth_token', accessToken);
     setToken(accessToken);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('auth_token');
     setToken(null);
   };
 

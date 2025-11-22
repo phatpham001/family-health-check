@@ -1,7 +1,6 @@
-import { projectId, publicAnonKey } from './supabase/info';
 import type { User, Family, Member, HealthCheck, Note } from '../types';
 
-const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-541782ba`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -16,7 +15,7 @@ async function apiRequest<T>(
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : `Bearer ${publicAnonKey}`,
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     };
 
@@ -29,7 +28,7 @@ async function apiRequest<T>(
 
     if (!response.ok) {
       console.error(`API error on ${endpoint}:`, data);
-      return { error: data.error || 'Đã xảy ra lỗi' };
+      return { error: data.detail || data.error || 'Đã xảy ra lỗi' };
     }
 
     return { data };
@@ -40,14 +39,20 @@ async function apiRequest<T>(
 }
 
 export const api = {
-  signup: (email: string, password: string, name: string): Promise<ApiResponse<{ user: User }>> =>
-    apiRequest('/signup', {
+  signup: (email: string, password: string, name: string): Promise<ApiResponse<{ access_token: string }>> =>
+    apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
     }),
 
-  getMe: (token: string): Promise<ApiResponse<{ user: User }>> =>
-    apiRequest('/me', {}, token),
+  login: (email: string, password: string): Promise<ApiResponse<{ access_token: string }>> =>
+    apiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  getMe: (token: string): Promise<ApiResponse<{ id: string; email: string; name: string; created_at: string }>> =>
+    apiRequest('/users/me', {}, token),
 
   getFamily: (token: string): Promise<ApiResponse<{ family: Family }>> =>
     apiRequest('/family', {}, token),
