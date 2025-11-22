@@ -1,10 +1,6 @@
 import { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Heart, Loader2 } from 'lucide-react';
-import { supabase } from '../utils/supabase-client';
+import styled from 'styled-components';
+import { Loader2 } from 'lucide-react';
 import { api } from '../utils/api';
 
 interface LoginPageProps {
@@ -27,19 +23,16 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     try {
       if (isLogin) {
         // Đăng nhập
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data: loginData, error: loginError } = await api.login(email, password);
 
-        if (signInError) {
-          setError('Email hoặc mật khẩu không đúng');
+        if (loginError) {
+          setError(loginError);
           setLoading(false);
           return;
         }
 
-        if (data.session?.access_token) {
-          onLoginSuccess(data.session.access_token);
+        if (loginData?.access_token) {
+          onLoginSuccess(loginData.access_token);
         }
       } else {
         // Đăng ký
@@ -49,7 +42,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           return;
         }
 
-        const { error: signupError } = await api.signup(email, password, name);
+        const { data: signupData, error: signupError } = await api.signup(email, password, name);
 
         if (signupError) {
           setError(signupError);
@@ -57,21 +50,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           return;
         }
 
-        // Tự động đăng nhập sau khi đăng ký
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) {
-          setError('Đăng ký thành công! Vui lòng đăng nhập');
-          setIsLogin(true);
-          setLoading(false);
-          return;
-        }
-
-        if (data.session?.access_token) {
-          onLoginSuccess(data.session.access_token);
+        if (signupData?.access_token) {
+          onLoginSuccess(signupData.access_token);
         }
       }
     } catch (err) {
@@ -83,109 +63,406 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-500 to-green-500 p-3 rounded-full">
-              <Heart className="size-8 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl text-gray-900">
-            {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            {isLogin
-              ? 'Theo dõi sức khỏe gia đình mỗi ngày'
-              : 'Bắt đầu quản lý sức khỏe gia đình'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-700">Tên của bạn</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Nguyễn Văn A"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required={!isLogin}
-                />
+    <StyledWrapper>
+      <div className="glitch-form-wrapper">
+        <div className="form-container">
+          <form className="glitch-card" onSubmit={handleSubmit}>
+            <div className="card-header">
+              <div className="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9" />
+                  <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                </svg>
+                <span>{isLogin ? 'HỆ_THỐNG_ĐĂNG_NHẬP' : 'HỆ_THỐNG_TẠO_TÀI_KHOẢN'}</span>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
-                {error}
+              <div className="card-dots">
+                <span />
+                <span />
+                <span />
               </div>
-            )}
+            </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
-            </Button>
-
-            <div className="text-center text-sm text-gray-700">
-              {isLogin ? (
-                <p>
-                  Chưa có tài khoản?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(false);
-                      setError('');
-                    }}
-                    className="text-blue-600 hover:underline font-medium"
-                  >
-                    Đăng ký ngay
-                  </button>
-                </p>
-              ) : (
-                <p>
-                  Đã có tài khoản?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(true);
-                      setError('');
-                    }}
-                    className="text-blue-600 hover:underline font-medium"
-                  >
-                    Đăng nhập
-                  </button>
-                </p>
+            <div className="card-body">
+              {!isLogin && (
+                <div className="form-group">
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    placeholder=" "
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <label htmlFor="name" className="form-label" data-text="HỌ_VÀ_TÊN">HỌ_VÀ_TÊN</label>
+                </div>
               )}
+
+              <div className="form-group">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder=" "
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <label htmlFor="email" className="form-label" data-text="ĐỊA_CHỈ_EMAIL">ĐỊA_CHỈ_EMAIL</label>
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  placeholder=" "
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={6}
+                />
+                <label htmlFor="password" className="form-label" data-text="MẬT_KHẨU">MẬT_KHẨU</label>
+              </div>
+
+              {error && (
+                <div className="error-message">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="submit-btn"
+                data-text={isLogin ? 'ĐĂNG_NHẬP' : 'TẠO_TÀI_KHOẢN'}
+                disabled={loading}
+              >
+                <span className="btn-text">
+                  {loading ? (
+                    <>
+                      <Loader2 className="inline mr-2 size-4 animate-spin" />
+                      {isLogin ? 'ĐANG XỬ LÝ...' : 'ĐANG TẠO...'}
+                    </>
+                  ) : (
+                    isLogin ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'
+                  )}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="toggle-btn"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                }}
+              >
+                {isLogin ? 'CHƯA CÓ TÀI KHOẢN? TẠO NGAY NÀO' : 'ĐÃ CÓ TÀI KHOẢN? ĐĂNG NHẬP THÔI'}
+              </button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </StyledWrapper>
   );
 }
+
+const StyledWrapper = styled.div`
+  .glitch-form-wrapper {
+    --bg-color: #0d0d0d;
+    --primary-color: #00f2ea;
+    --secondary-color: #a855f7;
+    --text-color: #e5e5e5;
+    --font-family: "Fira Code", Consolas, "Courier New", Courier, monospace;
+    --glitch-anim-duration: 0.5s;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: var(--font-family);
+    background: linear-gradient(135deg, #020205 0%, #00201c 100%);
+    padding: 1rem;
+  }
+
+  .form-container {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .glitch-card {
+    background-color: var(--bg-color);
+    width: 100%;
+    border: 1px solid rgba(0, 242, 234, 0.2);
+    box-shadow:
+      0 0 20px rgba(0, 242, 234, 0.1),
+      inset 0 0 10px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0.8em 1.5em;
+    border-bottom: 1px solid rgba(0, 242, 234, 0.2);
+  }
+
+  .card-title {
+    color: var(--primary-color);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+  }
+
+  .card-title svg {
+    width: 1.2em;
+    height: 1.2em;
+    stroke: var(--primary-color);
+  }
+
+  .card-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #333;
+    margin-left: 5px;
+  }
+
+  .card-body {
+    padding: 2.5rem;
+  }
+
+  .form-group {
+    position: relative;
+    margin-bottom: 2.5rem;
+  }
+
+  .form-label {
+    position: absolute;
+    top: 1em;
+    left: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(0, 242, 234, 0.3);
+    padding: 1em 0;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+
+  .form-group input:focus {
+    border-color: var(--primary-color);
+  }
+
+  .form-group input:focus + .form-label,
+  .form-group input:not(:placeholder-shown) + .form-label {
+    top: -1.5em;
+    font-size: 0.95rem;
+    opacity: 1;
+  }
+
+  .form-group input:focus + .form-label::before,
+  .form-group input:focus + .form-label::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+  }
+
+  .form-group input:focus + .form-label::before {
+    color: var(--secondary-color);
+    animation: glitch-anim var(--glitch-anim-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+
+  .form-group input:focus + .form-label::after {
+    color: var(--primary-color);
+    animation: glitch-anim var(--glitch-anim-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both;
+  }
+
+  @keyframes glitch-anim {
+    0% {
+      transform: translate(0);
+      clip-path: inset(0 0 0 0);
+    }
+    20% {
+      transform: translate(-5px, 3px);
+      clip-path: inset(50% 0 20% 0);
+    }
+    40% {
+      transform: translate(3px, -2px);
+      clip-path: inset(20% 0 60% 0);
+    }
+    60% {
+      transform: translate(-4px, 2px);
+      clip-path: inset(80% 0 5% 0);
+    }
+    80% {
+      transform: translate(4px, -3px);
+      clip-path: inset(30% 0 45% 0);
+    }
+    100% {
+      transform: translate(0);
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .error-message {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 1.2em;
+    margin-top: 1.5rem;
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .submit-btn:hover:not(:disabled),
+  .submit-btn:focus:not(:disabled) {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    box-shadow: 0 0 25px var(--primary-color);
+    outline: none;
+  }
+
+  .submit-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .submit-btn .btn-text {
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  .submit-btn:hover:not(:disabled) .btn-text,
+  .submit-btn:focus:not(:disabled) .btn-text {
+    opacity: 0;
+  }
+
+  .submit-btn::before,
+  .submit-btn::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    background-color: var(--primary-color);
+    transition: opacity 0.2s ease;
+  }
+
+  .submit-btn:hover:not(:disabled)::before,
+  .submit-btn:focus:not(:disabled)::before {
+    opacity: 1;
+    color: var(--secondary-color);
+    animation: glitch-anim var(--glitch-anim-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+
+  .submit-btn:hover:not(:disabled)::after,
+  .submit-btn:focus:not(:disabled)::after {
+    opacity: 1;
+    color: var(--bg-color);
+    animation: glitch-anim var(--glitch-anim-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both;
+  }
+
+  .toggle-btn {
+    width: 100%;
+    padding: 0.9em;
+    margin-top: 1rem;
+    background: transparent;
+    border: 2px solid rgba(0, 242, 234, 0.5);
+    color: var(--primary-color);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .toggle-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--bg-color);
+    background-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 242, 234, 0.4);
+  }
+
+  .toggle-btn:active {
+    transform: scale(0.97);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .form-group input:focus + .form-label::before,
+    .form-group input:focus + .form-label::after,
+    .submit-btn:hover::before,
+    .submit-btn:focus::before,
+    .submit-btn:hover::after,
+    .submit-btn:focus::after {
+      animation: none;
+      opacity: 0;
+    }
+
+    .submit-btn:hover .btn-text {
+      opacity: 1;
+    }
+  }
+`;
