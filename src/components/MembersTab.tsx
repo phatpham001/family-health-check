@@ -304,7 +304,7 @@ export function MembersTab({ token }: MembersTabProps) {
         </Card>
       )} */}
 
-      <Card>
+      <Card className="bg-white/90 backdrop-blur-sm border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -315,12 +315,12 @@ export function MembersTab({ token }: MembersTabProps) {
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
                   <Plus className="size-4 mr-2" />
                   Thêm thành viên
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-white border-gray-200 shadow-xl">
                 <DialogHeader>
                   <DialogTitle className="text-gray-900">Thêm thành viên mới</DialogTitle>
                   <DialogDescription className="text-gray-600">
@@ -369,11 +369,11 @@ export function MembersTab({ token }: MembersTabProps) {
       </Card>
 
       {members.length === 0 ? (
-        <Card>
+        <Card className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="py-12 text-center">
             <User className="size-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">Chưa có thành viên nào</p>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button onClick={() => setDialogOpen(true)} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
               <Plus className="size-4 mr-2" />
               Thêm thành viên đầu tiên
             </Button>
@@ -389,19 +389,19 @@ export function MembersTab({ token }: MembersTabProps) {
             return (
               <Card
                 key={member.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="cursor-pointer bg-white/90 backdrop-blur-sm border-blue-200 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
                 onClick={() => setSelectedMember(member.id)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <User className="size-6 text-blue-600" />
+                      <div className="bg-blue-100 p-3 rounded-full group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300">
+                        <User className="size-6 text-blue-600 group-hover:text-purple-600 transition-colors duration-300" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg text-gray-900">{member.name}</CardTitle>
+                        <CardTitle className="text-lg text-gray-900 group-hover:text-blue-700 transition-colors duration-300">{member.name}</CardTitle>
                         {member.relationship && (
-                          <CardDescription className="text-gray-600">{member.relationship}</CardDescription>
+                          <CardDescription className="text-gray-600 group-hover:text-blue-600 transition-colors duration-300">{member.relationship}</CardDescription>
                         )}
                       </div>
                     </div>
