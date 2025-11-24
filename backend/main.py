@@ -82,10 +82,16 @@ def register():
         return jsonify({"detail": "Email already registered"}), 400
     
     hashed_password = hash_password(data["password"])
+    
+    # Tài khoản đầu tiên là admin, những tài khoản sau là user
+    users_count = users_collection.count_documents({})
+    role = "admin" if users_count == 0 else "user"
+    
     user_doc = {
         "email": data["email"],
         "password": hashed_password,
         "name": data["name"],
+        "role": role,
         "created_at": datetime.utcnow()
     }
     
@@ -135,6 +141,7 @@ def get_me():
         "id": str(user_doc["_id"]),
         "email": user_doc["email"],
         "name": user_doc["name"],
+        "role": user_doc.get("role", "user"),
         "created_at": user_doc["created_at"].isoformat()
     }), 200
 
@@ -152,17 +159,157 @@ def get_family():
     payload = verify_token(token)
     if not payload:
         return jsonify({"detail": "Invalid token"}), 401
+    
     families_collection = db["families"]
-    family = families_collection.find_one({"user_id": payload["sub"]})
-    if not family:
-        family = {
-            "user_id": payload["sub"],
-            "name": "My Family",
-            "created_at": datetime.utcnow()
+    families = list(families_collection.find({"members.userId": payload["sub"]}))
+    
+    if not families:
+        return jsonify({"family": None}), 200
+    
+    family = families[0]
+    return jsonify({
+        "family": {
+            "id": str(family["_id"]), 
+            "name": family["name"], 
+            "members": family.get("members", []),
+            "admin": family.get("admin")
         }
-        result = families_collection.insert_one(family)
-        family["_id"] = result.inserted_id
-    return jsonify({"family": {"id": str(family["_id"]), "name": family["name"]}}), 200
+    }), 200
+
+@app.route("/api/family/create", methods=["POST"])
+def create_family():
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    data = request.get_json()
+    name = data.get("name")
+    members_data = data.get("members", [])
+    creator_is_admin = data.get("creatorIsAdmin", True)
+    
+    if not name:
+        return jsonify({"detail": "Family name required"}), 400
+    
+    users_collection = db["users"]
+    current_user = users_collection.find_one({"_id": ObjectId(payload["sub"])})
+    
+    members = [{
+        "userId": payload["sub"],
+        "email": current_user["email"],
+        "name": current_user["name"],
+        "role": "admin" if creator_is_admin else "member",
+        "joinedAt": datetime.utcnow().isoformat()
+    }]
+    
+    # Người tạo luôn là admin nếu họ chọn
+    admin_id = payload["sub"] if creator_is_admin else None
+    
+    for member_data in members_data:
+        email = member_data.get("email")
+        is_admin = member_data.get("isAdmin", False)
+        
+        user = users_collection.find_one({"email": email})
+        if not user:
+            return jsonify({"detail": f"User with email {email} not found"}), 404
+        
+        members.append({
+            "userId": str(user["_id"]),
+            "email": email,
+            "name": user["name"],
+            "role": "admin" if is_admin else "member",
+            "joinedAt": datetime.utcnow().isoformat()
+        })
+        
+        if is_admin and not admin_id:
+            admin_id = str(user["_id"])
+    
+    if not admin_id:
+        return jsonify({"detail": "At least one admin is required"}), 400
+    
+    families_collection = db["families"]
+    family_doc = {
+        "name": name,
+        "createdBy": payload["sub"],
+        "admin": admin_id,
+        "members": members,
+        "created_at": datetime.utcnow()
+    }
+    
+    result = families_collection.insert_one(family_doc)
+    return jsonify({"family": {"id": str(result.inserted_id), "name": name, "admin": admin_id, "members": members}}), 201
+
+@app.route("/api/family/<family_id>/members", methods=["GET"])
+def get_family_members(family_id):
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    families_collection = db["families"]
+    family = families_collection.find_one({"_id": ObjectId(family_id)})
+    
+    if not family:
+        return jsonify({"detail": "Family not found"}), 404
+    
+    members = family.get("members", [])
+    return jsonify({"members": [{"id": m.get("userId"), "name": m.get("name"), "email": m.get("email"), "role": m.get("role")} for m in members]}), 200
+
+@app.route("/api/family/<family_id>/members", methods=["POST"])
+def add_family_member(family_id):
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    families_collection = db["families"]
+    family = families_collection.find_one({"_id": ObjectId(family_id)})
+    
+    if not family:
+        return jsonify({"detail": "Family not found"}), 404
+    
+    if family["admin"] != payload["sub"]:
+        return jsonify({"detail": "Only admin can add members"}), 403
+    
+    data = request.get_json()
+    email = data.get("email")
+    is_admin = data.get("isAdmin", False)
+    
+    if not email:
+        return jsonify({"detail": "Email required"}), 400
+    
+    users_collection = db["users"]
+    user = users_collection.find_one({"email": email})
+    
+    if not user:
+        return jsonify({"detail": f"User with email {email} not found"}), 404
+    
+    new_member = {
+        "userId": str(user["_id"]),
+        "email": email,
+        "name": user["name"],
+        "role": "admin" if is_admin else "member",
+        "joinedAt": datetime.utcnow().isoformat()
+    }
+    
+    families_collection.update_one(
+        {"_id": ObjectId(family_id)},
+        {"$push": {"members": new_member}}
+    )
+    
+    return jsonify({"member": new_member}), 201
 
 @app.route("/api/members", methods=["GET"])
 def get_members():
@@ -283,6 +430,110 @@ def get_notes():
     notes_collection = db["notes"]
     notes = list(notes_collection.find({"user_id": payload["sub"]}))
     return jsonify({"notes": [{"id": str(n["_id"]), "content": n["content"]} for n in notes]}), 200
+
+@app.route("/api/family/invite", methods=["POST"])
+def invite_user():
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    users_collection = db["users"]
+    admin_user = users_collection.find_one({"_id": ObjectId(payload["sub"])})
+    if not admin_user or admin_user.get("role") != "admin":
+        return jsonify({"detail": "Only admin can invite users"}), 403
+    
+    data = request.get_json()
+    email = data.get("email")
+    
+    if not email:
+        return jsonify({"detail": "Email required"}), 400
+    
+    invited_user = users_collection.find_one({"email": email})
+    if not invited_user:
+        return jsonify({"detail": "User not found"}), 404
+    
+    invitations_collection = db["invitations"]
+    invitation = {
+        "from_user_id": payload["sub"],
+        "to_user_id": str(invited_user["_id"]),
+        "to_email": email,
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    }
+    result = invitations_collection.insert_one(invitation)
+    
+    return jsonify({"invitation": {"id": str(result.inserted_id), "status": "pending"}}), 201
+
+@app.route("/api/family/invitations", methods=["GET"])
+def get_invitations():
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    invitations_collection = db["invitations"]
+    invitations = list(invitations_collection.find({"to_user_id": payload["sub"], "status": "pending"}))
+    
+    return jsonify({"invitations": [{"id": str(i["_id"]), "from_email": i.get("from_email", "Unknown")} for i in invitations]}), 200
+
+@app.route("/api/family/invitations/<invitation_id>/accept", methods=["POST"])
+def accept_invitation(invitation_id):
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    invitations_collection = db["invitations"]
+    invitation = invitations_collection.find_one({"_id": ObjectId(invitation_id)})
+    
+    if not invitation:
+        return jsonify({"detail": "Invitation not found"}), 404
+    
+    if invitation["to_user_id"] != payload["sub"]:
+        return jsonify({"detail": "Not authorized"}), 403
+    
+    invitations_collection.update_one(
+        {"_id": ObjectId(invitation_id)},
+        {"$set": {"status": "accepted"}}
+    )
+    
+    return jsonify({"status": "accepted"}), 200
+
+@app.route("/api/family/<family_id>", methods=["DELETE"])
+def delete_family(family_id):
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    families_collection = db["families"]
+    family = families_collection.find_one({"_id": ObjectId(family_id)})
+    
+    if not family:
+        return jsonify({"detail": "Family not found"}), 404
+    
+    if family["admin"] != payload["sub"]:
+        return jsonify({"detail": "Only admin can delete family"}), 403
+    
+    families_collection.delete_one({"_id": ObjectId(family_id)})
+    return jsonify({"success": True}), 200
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)

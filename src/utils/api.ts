@@ -51,7 +51,7 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  getMe: (token: string): Promise<ApiResponse<{ id: string; email: string; name: string; created_at: string }>> =>
+  getMe: (token: string): Promise<ApiResponse<{ id: string; email: string; name: string; role: string; created_at: string }>> =>
     apiRequest('/users/me', {}, token),
 
   getFamily: (token: string): Promise<ApiResponse<{ family: Family }>> =>
@@ -95,4 +95,38 @@ export const api = {
 
   getNotes: (token: string): Promise<ApiResponse<{ notes: Note[] }>> =>
     apiRequest('/notes', {}, token),
+
+  inviteUser: (token: string, email: string): Promise<ApiResponse<{ invitation: any }>> =>
+    apiRequest('/family/invite', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }, token),
+
+  getInvitations: (token: string): Promise<ApiResponse<{ invitations: any[] }>> =>
+    apiRequest('/family/invitations', {}, token),
+
+  acceptInvitation: (token: string, invitationId: string): Promise<ApiResponse<{ status: string }>> =>
+    apiRequest(`/family/invitations/${invitationId}/accept`, {
+      method: 'POST',
+    }, token),
+
+  deleteFamily: (token: string, familyId: string): Promise<ApiResponse<{ success: boolean }>> =>
+    apiRequest(`/family/${familyId}`, {
+      method: 'DELETE',
+    }, token),
+
+  createFamily: (token: string, name: string, members: Array<{email: string, isAdmin: boolean}>, creatorIsAdmin: boolean = true): Promise<ApiResponse<{ family: any }>> =>
+    apiRequest('/family/create', {
+      method: 'POST',
+      body: JSON.stringify({ name, members, creatorIsAdmin }),
+    }, token),
+
+  addFamilyMember: (token: string, familyId: string, email: string, isAdmin: boolean): Promise<ApiResponse<{ member: any }>> =>
+    apiRequest(`/family/${familyId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email, isAdmin }),
+    }, token),
+
+  getFamilyMembers: (token: string, familyId: string): Promise<ApiResponse<{ members: any[] }>> =>
+    apiRequest(`/family/${familyId}/members`, {}, token),
 };
