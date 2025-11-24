@@ -3,14 +3,25 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role: 'admin' | 'user';
   createdAt: string;
 }
 
 export interface Family {
   id: string;
   name: string;
-  createdBy: string;
-  createdAt: string;
+  admin: string;
+  members: FamilyMember[];
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface FamilyMember {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'member';
+  joinedAt?: string;
 }
 
 // Member types
