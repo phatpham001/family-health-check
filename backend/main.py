@@ -376,11 +376,21 @@ def create_health_check():
         "user_id": payload["sub"],
         "member_id": data.get("memberId"),
         "status": data.get("status"),
-        "note": data.get("note"),
+        "note": data.get("note", ""),
+        "temperature": data.get("temperature", ""),
+        "bloodPressure": data.get("bloodPressure", ""),
         "created_at": datetime.utcnow()
     }
     result = checks_collection.insert_one(check_doc)
-    return jsonify({"healthCheck": {"id": str(result.inserted_id)}}), 201
+    return jsonify({"healthCheck": {
+        "id": str(result.inserted_id),
+        "memberId": check_doc["member_id"],
+        "status": check_doc["status"],
+        "note": check_doc["note"],
+        "temperature": check_doc["temperature"],
+        "bloodPressure": check_doc["bloodPressure"],
+        "timestamp": check_doc["created_at"].isoformat()
+    }}), 201
 
 @app.route("/api/health-checks/<member_id>", methods=["GET"])
 def get_health_checks(member_id):
@@ -393,8 +403,44 @@ def get_health_checks(member_id):
     if not payload:
         return jsonify({"detail": "Invalid token"}), 401
     checks_collection = db["health_checks"]
-    checks = list(checks_collection.find({"user_id": payload["sub"], "member_id": member_id}))
-    return jsonify({"healthChecks": [{"id": str(c["_id"]), "status": c["status"]} for c in checks]}), 200
+    checks = list(checks_collection.find({"user_id": payload["sub"], "member_id": member_id}).sort("created_at", -1))
+    return jsonify({"healthChecks": [{
+        "id": str(c["_id"]), 
+        "memberId": c.get("member_id"),
+        "status": c.get("status"),
+        "note": c.get("note", ""),
+        "temperature": c.get("temperature", ""),
+        "bloodPressure": c.get("bloodPressure", ""),
+        "timestamp": c.get("created_at").isoformat() if c.get("created_at") else None,
+        "date": c.get("created_at").isoformat() if c.get("created_at") else None
+    } for c in checks]}), 200
+
+@app.route("/api/health-checks/<check_id>", methods=["DELETE"])
+def delete_health_check(check_id):
+    if db is None:
+        return jsonify({"detail": "Database connection failed"}), 503
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"detail": "Missing token"}), 401
+    payload = verify_token(token)
+    if not payload:
+        return jsonify({"detail": "Invalid token"}), 401
+    
+    checks_collection = db["health_checks"]
+    check = checks_collection.find_one({"_id": ObjectId(check_id)})
+    
+    if not check:
+        return jsonify({"detail": "Health check not found"}), 404
+    
+    # Only allow deletion if user owns the check or is admin
+    if check.get("user_id") != payload["sub"]:
+        users_collection = db["users"]
+        user = users_collection.find_one({"_id": ObjectId(payload["sub"])})
+        if not user or user.get("role") != "admin":
+            return jsonify({"detail": "Not authorized"}), 403
+    
+    checks_collection.delete_one({"_id": ObjectId(check_id)})
+    return jsonify({"success": True}), 200
 
 @app.route("/api/notes", methods=["POST"])
 def create_note():
@@ -532,6 +578,15 @@ def delete_family(family_id):
     if family["admin"] != payload["sub"]:
         return jsonify({"detail": "Only admin can delete family"}), 403
     
+    # Get all member IDs from family
+    member_ids = [m.get("userId") for m in family.get("members", [])]
+    
+    # Delete all health checks for these members
+    checks_collection = db["health_checks"]
+    for member_id in member_ids:
+        checks_collection.delete_many({"member_id": member_id})
+    
+    # Delete the family
     families_collection.delete_one({"_id": ObjectId(family_id)})
     return jsonify({"success": True}), 200
 
