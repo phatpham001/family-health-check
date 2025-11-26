@@ -87,6 +87,11 @@ export const api = {
   getHealthChecks: (token: string, memberId: string): Promise<ApiResponse<{ healthChecks: HealthCheck[] }>> =>
     apiRequest(`/health-checks/${memberId}`, {}, token),
 
+  deleteHealthCheck: (token: string, checkId: string): Promise<ApiResponse<{ success: boolean }>> =>
+    apiRequest(`/health-checks/${checkId}`, {
+      method: 'DELETE',
+    }, token),
+
   createNote: (token: string, content: string, type: string): Promise<ApiResponse<{ note: Note }>> =>
     apiRequest('/notes', {
       method: 'POST',
